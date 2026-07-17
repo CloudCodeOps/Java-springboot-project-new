@@ -1,0 +1,79 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: backend
+  CONTAINER_NAME: backend
+  CONTAINER_PORT: 8084
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        working-directory: backend
+        run: |
+          docker build -t $ECR_REPOSITORY:${{ github.run_number }} .
+          docker tag $ECR_REPOSITORY:${{ github.run_number }} \
+          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.run_number }}
+
+      - name: Push Docker Image
+        run: |
+          docker push \
+          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.run_number }}
+
+      - name: Stop Existing Container
+        run: |
+          docker stop $CONTAINER_NAME || true
+          docker rm $CONTAINER_NAME || true
+
+      - name: Pull Latest Image
+        run: |
+          docker pull \
+          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.run_number }}
+
+      - name: Run Container
+        run: |
+          docker run -d \
+            --name $CONTAINER_NAME \
+            --restart always \
+            -p 8084:8084 \
+            -e MYSQL_HOST=database-1.c2zmaks84ifc.us-east-1.rds.amazonaws.com \
+            -e MYSQL_PORT=3306 \
+            -e MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }} \
+            -e MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.run_number }}
+
+      - name: Health Check
+        run: |
+          sleep 20
+          curl http://localhost:8084/actuator/health
+
+      - name: Show Running Containers
+        if: always()
+        run: docker ps -a
+
+      - name: Show Docker Images
+        if: always()
+        run: docker images
