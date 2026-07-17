@@ -14,11 +14,11 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
 # Set default environment variables (can be overridden at runtime)
- ENV SPRING_DATASOURCE_URL="jdbc:mysql://database-1.c2zmaks84ifc.us-east-1.rds.amazonaws.com:3306/datastore?createDatabaseIfNotExist=true"
- ENV SPRING_DATASOURCE_USERNAME="admin"
- ENV SPRING_DATASOURCE_PASSWORD="admin123"
- ENV SPRING_JPA_HIBERNATE_DDL_AUTO="update"
- ENV SERVER_PORT=8084
+# ENV SPRING_DATASOURCE_URL="jdbc:mysql://database-1.c2zmaks84ifc.us-east-1.rds.amazonaws.com:3306/datastore?createDatabaseIfNotExist=true"
+# ENV SPRING_DATASOURCE_USERNAME="admin"
+# ENV SPRING_DATASOURCE_PASSWORD="admin123"
+# ENV SPRING_JPA_HIBERNATE_DDL_AUTO="update"
+# ENV SERVER_PORT=8084
 
 # Expose the port (optional)
 EXPOSE 8084
