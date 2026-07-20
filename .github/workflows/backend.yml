@@ -1,21 +1,17 @@
 name: Backend CI/CD
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: backend
   CONTAINER_NAME: backend
   CONTAINER_PORT: 8084
-
 jobs:
   build-and-deploy:
     runs-on: self-hosted
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
